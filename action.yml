@@ -1,59 +1,59 @@
 name: "Update Notion"
-description: "Update notion tasks from Github PRs"
+description: "Update Notion task status from Github PR actions"
 author: "Nathan Kwan"
 inputs:
-  status-property-name:
-    description: "Name of the property name that will receive the new status"
+  notion-status-prop:
+    description: "Notion status property name"
     required: false
     default: "Status"
-  url-property-name:
-    description: "Name of the property name that will receive the link of the PR"
+  notion-github-url-prop:
+    description: "Notion Github URL property name"
     required: false
     default: "Github URL"
   draft:
-    description: "Value of the status to put on the Notion Page when the PR state is `draft`"
+    description: "Status to set when pull request is 'draft'"
     required: false
   merged:
-    description: "Value of the status to put on the Notion Page when the PR state is `merged`"
+    description: "Status to set when pull request is 'merged'"
     required: false
   assigned:
-    description: "Value of the status to put on the Notion Page when the PR action is `assigned`"
+    description: "Status to set when pull request is 'assigned'"
     required: false
   unassigned:
-    description: "Value of the status to put on the Notion Page when the PR action is `unassigned`"
+    description: "Status to set when pull request is 'unassigned'"
     required: false
   labeled:
-    description: "Value of the status to put on the Notion Page when the PR action is `labeled`"
+    description: "Status to set when pull request is 'labeled'"
     required: false
   unlabeled:
-    description: "Value of the status to put on the Notion Page when the PR action is `unlabeled`"
+    description: "Status to set when pull request is 'unlabeled'"
     required: false
   opened:
-    description: "Value of the status to put on the Notion Page when the PR action is `opened`"
+    description: "Status to set when pull request is 'opened'"
     required: false
   edited:
-    description: "Value of the status to put on the Notion Page when the PR action is `edited`"
+    description: "Status to set when pull request is 'edited'"
     required: false
   closed:
-    description: "Value of the status to put on the Notion Page when the PR action is `closed`"
+    description: "Status to set when pull request is 'closed'"
     required: false
   reopened:
-    description: "Value of the status to put on the Notion Page when the PR action is `reopened`"
+    description: "Status to set when pull request is 'reopened'"
     required: false
   synchronize:
-    description: "Value of the status to put on the Notion Page when the PR action is `synchronize`"
+    description: "Status to set when pull request is 'synchronize'"
     required: false
   ready_for_review:
-    description: "Value of the status to put on the Notion Page when the PR action is `ready_for_review`"
+    description: "Status to set when pull request is 'ready_for_review'"
     required: false
   locked:
-    description: "Value of the status to put on the Notion Page when the PR action is `locked`"
+    description: "Status to set when pull request is 'locked'"
     required: false
   unlocked:
-    description: "Value of the status to put on the Notion Page when the PR action is `unlocked`"
+    description: "Status to set when pull request is 'unlocked'"
     required: false
   review_requested:
-    description: "Value of the status to put on the Notion Page when the PR action is `review_requested`"
+    description: "Status to set when pull request is 'review_requested'"
     required: false
   api_key:
     description: "Notion API key"

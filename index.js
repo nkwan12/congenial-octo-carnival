@@ -1,104 +1,71 @@
-const core = require("@actions/core");
-const github = require("@actions/github");
-const { Client } = require("@notionhq/client");
-const getUrls = require("get-urls");
+import * as core from "@actions/core";
+import * as github from "@actions/github";
+import { Client } from "@notionhq/client";
+import getUrls from "get-urls";
 
-function escapeRegExp(string) {
-  return string.replace(/[.*+?^${}()|[\]\\]/g, "\\$&"); // $& means the whole matched string
-}
+const NOTION_ID_REGEXP = /-([a-zA-Z0-9]+)\/?$/;
 
-function extractGithubParams() {
-  const pullRequest = github.context.payload.pull_request;
+const notionStatusProp =
+  core.getInput("notion-status-prop", { required: false }) || "Status";
+const notionGithubURLProp =
+  core.getInput("notion-github-url-prop", { required: false }) || "Github URL";
+const isDraft = github.context.payload.pull_request?.draft;
+const isMerged = github.context.payload.pull_request?.merged;
+const statusKey = isMerged
+  ? "merged"
+  : isDraft
+  ? "draft"
+  : github.context.payload.action;
 
-  const requiredPrefix = escapeRegExp(
-    core.getInput("required-prefix", { required: false }) || ""
-  );
+const pullRequest = github.context.payload.pull_request;
+const pullRequestStatus = core.getInput(statusKey, { required: false });
+const pullRequestURL = pullRequest.html_url;
 
-  const requiredSuffix = escapeRegExp(
-    core.getInput("required-suffix", { required: false }) || ""
-  );
-
-  const isDraft = github.context.payload.pull_request?.draft;
-  const isMerged = github.context.payload.pull_request?.merged;
-  const statusKey = isMerged
-    ? "merged"
-    : isDraft
-    ? "draft"
-    : github.context.payload.action;
-  const status = core.getInput(statusKey, { required: false });
-
-  const githubUrlProperty =
-    core.getInput("github-url-property-name", { required: false }) ||
-    "Github URL";
-
-  const statusProperty =
-    core.getInput("status-property-name", { required: false }) || "Status";
-
-  return {
-    metadata: {
-      statusKey,
-    },
-    pullRequest: {
-      body: pullRequest.body ?? "",
-      href: pullRequest.html_url,
-      status,
-    },
-    suffix: requiredSuffix,
-    prefix: requiredPrefix,
-    notionProperties: {
-      githubUrl: githubUrlProperty,
-      status: statusProperty,
-    },
-  };
-}
-
-const params = extractGithubParams();
-
-const urls = new Array(
-  getUrls(params.pullRequest.body, {
+const urls = Array.from(
+  getUrls(pullRequest.body || "", {
     stripHash: true,
     removeQueryParameters: true,
   })
 ).filter((url) => url?.match("notion.so"));
+core.info(`Found notion urls: ${urls.join(", ")}`);
 
 const apiKey = core.getInput("api_key");
 
 if (!apiKey) {
   core.error("No Notion API key found!");
-} else if (!!urls.length && !!params.pullRequest.status) {
+} else if (!!urls.length) {
   const notion = new Client({
     auth: apiKey,
   });
 
   urls.forEach((url) => {
-    const notionUrlParts = url
-      .match(URL_REGEX)
-      .find((url) => url.match("notion.so"))
-      .split("/");
-
-    const taskName = notionUrlParts[notionUrlParts.length - 1];
-
-    const taskParts = taskName.split("-");
-    const pageId = taskParts[taskParts.length - 1];
+    const urlMatch = url.match(NOTION_ID_REGEXP);
+    const pageId = urlMatch[urlMatch.length - 1];
 
     notion.pages
       .update({
         page_id: pageId,
         properties: {
-          ...(params.pullRequest.status
+          ...(pullRequestStatus
             ? {
-                [params.notionProperties.status]: {
-                  name: params.pullRequest.status,
+                [notionStatusProp]: {
+                  name: pullRequestStatus,
                 },
               }
             : {}),
-          [params.notionProperties.githubUrl]: params.pullRequest.href,
+          [notionGithubURLProp]: pullRequestURL,
         },
       })
       .then(() => {
-        core.info(
-          `Updated notion task to ${params.notionProperties.status} with id: ${pageId}`
-        );
+        if (!pullRequestStatus) {
+          core.info(
+            `Updating task with id: ${pageId}. Updated property ${notionGithubURLProp}. No matching notion status found for action: ${statusKey}`
+          );
+        } else {
+          core.info(
+            `Updating task with id: ${pageId}. Updated property ${notionGithubURLProp}. Updated property ${notionStatusProp} to status: '${pullRequestStatus}'.`
+          );
+        }
       })
       .catch((err) => {
         core.setFailed(err);
@@ -107,5 +74,5 @@ if (!apiKey) {
 } else if (!!urls.length) {
   core.info("Notion tasks found, but no matching status found in params");
 } else {
-  core.info("No notion task(s) found in the PR body.");
+  core.info("No notion task links found in PR");
 }
